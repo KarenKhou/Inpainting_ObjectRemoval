@@ -2,29 +2,27 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# ---------- 0) Charger l'image et le masque ----------
-image = cv2.imread("photo.png")                               # ta photo
-mask  = cv2.imread("mask.png", cv2.IMREAD_GRAYSCALE)          # blanc=à enlever, noir=à garder
+image = cv2.imread("photo.png")                             
+mask  = cv2.imread("mask.png", cv2.IMREAD_GRAYSCALE)  #blanc  =  aenlever , noir  a garder
 
-# Sécuriser : binariser le masque (0 / 255)
 _, mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
 
-# Si tailles différentes, on adapte le masque à l'image
+# on adapte le masque a l'image  (taille)
 if (mask.shape[0] != image.shape[0]) or (mask.shape[1] != image.shape[1]):
     mask = cv2.resize(mask, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST)
 
-# ---------- 1) Trouver le(s) contour(s) δΩ ----------
+#findcontour du mask
 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-# ---------- 2) Carte de confiance C ----------
-# C = 1 (connu) partout, puis C = 0 dans la zone blanche du masque (à remplir)
+#confiance C
+# C = 1  partout C = 0 dans la zone blanche du masque (a remplir)
 C = np.ones_like(mask, dtype=np.float32)
 C[mask == 255] = 0.0
 
-# ---------- 3) Priorité simplifiée P(p) sur le contour ----------
+#priorité simplifiee
 # On définit un patch autour de chaque point p du contour et on prend la moyenne de C dans ce patch
 # (version débutante : D = 1, donc P(p) = C_moyenne_autour_de_p)
-patch_radius = 9                        # => patch 19x19 (ajuste si tu veux)
+patch_radius = 9                        #a deter
 h, w = mask.shape[:2]
 
 # Pour visualiser : on va stocker P sur les points du contour
@@ -49,12 +47,12 @@ for cnt in contours:
 
 P_values = np.array(P_values, dtype=np.float32)  # déjà dans [0,1]
 
-# ---------- 4) Visualisations ----------
-# A) Image + contour rose
+
+# Image + contour rose
 img_contour = image.copy()
 cv2.drawContours(img_contour, contours, -1, (255, 0, 255), 2)   # rose (BGR)
 
-# B) Image + carte de priorités P(p) le long du contour (points colorés)
+#Image + carte de priorités du contour
 img_P = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # pour affichage correct dans matplotlib
 xs = [x for (x, y) in contour_xy]
 ys = [y for (x, y) in contour_xy]
@@ -76,12 +74,11 @@ plt.axis("off")
 plt.tight_layout()
 plt.show()
 
-# (Optionnel) Si tu veux aussi la version "remplissage rose transparent" :
 overlay = image.copy()
 cv2.drawContours(overlay, contours, -1, (255, 0, 255), -1)   # remplir en rose
 alpha = 0.4
 img_fill = cv2.addWeighted(overlay, alpha, image, 1 - alpha, 0)
-cv2.drawContours(img_fill, contours, -1, (255, 0, 255), 2)   # contour rose par-dessus
+cv2.drawContours(img_fill, contours, -1, (255, 0, 255), 2)   # contour rose 
 
 plt.imshow(cv2.cvtColor(img_fill, cv2.COLOR_BGR2RGB))
 plt.title("Contour + remplissage rose transparent")
