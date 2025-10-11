@@ -90,42 +90,61 @@ while np.any(mask_target == 1) and iteration < max_iter:
             if np.count_nonzero(valid) == 0:
                 continue
 
-            # s'assurer que les deux patchs ont la même taille
+           # s'assurer que les deux patchs ont la même taille
             th, tw = target_patch.shape[:2]
             sh, sw = source_patch.shape[:2]
             hh = min(th, sh)
             ww = min(tw, sw)
-            target_patch = target_patch[:hh, :ww]
-            source_patch = source_patch[:hh, :ww]
-            valid = valid[:hh, :ww]
 
-            diff = (target_patch.astype(np.float32) - source_patch.astype(np.float32)) ** 2
-            valid3 = np.repeat(valid[:, :, None], 3, axis=2)
-            ssd = np.sum(diff[valid3]) / np.count_nonzero(valid)
+            # faire des copies locales SANS modifier target_patch original
+            t_patch_c = target_patch[:hh, :ww].astype(np.float32)
+            s_patch_c = source_patch[:hh, :ww].astype(np.float32)
+            valid_c = valid[:hh, :ww]
+
+            if np.count_nonzero(valid_c) == 0:
+                continue
+
+            diff = (t_patch_c - s_patch_c) ** 2
+            valid3 = np.repeat(valid_c[:, :, None], 3, axis=2)
+            ssd = np.sum(diff[valid3]) / np.count_nonzero(valid_c)
+
             if ssd < min_ssd:
                 min_ssd = ssd
                 best_qx, best_qy = qx, qy
 
     print(f"par ({best_qx},{best_qy}), SSD={min_ssd:.2f}")
 
-    #  Copier les pixels manquants 
+        # --- Copier les pixels manquants ---
     sx0, sx1 = best_qx - patch_radius, best_qx + patch_radius + 1
     sy0, sy1 = best_qy - patch_radius, best_qy + patch_radius + 1
+
+    # Ajuster les bornes si on est proche des bords
+    sx0 = max(0, sx0)
+    sy0 = max(0, sy0)
+    sx1 = min(w, sx1)
+    sy1 = min(h, sy1)
+
     source_patch = image_bgr[sy0:sy1, sx0:sx1]
 
+    # --- Adapter les tailles entre patchs source et cible ---
+    patch_h = y1 - y0
+    patch_w = x1 - x0
+    source_patch = source_patch[:patch_h, :patch_w]
+    target_mask_cropped = mask_target[y0:y1, x0:x1][:patch_h, :patch_w]
+
+    # --- Copie sécurisée des pixels ---
     filled_image = image_bgr.copy()
-    #filled_image[y0:y1, x0:x1][target_mask == 1] = [0, 0, 255]  # Debug rouge
-    filled_image[y0:y1, x0:x1][target_mask == 1] = source_patch[target_mask == 1]
+    filled_image[y0:y1, x0:x1][target_mask_cropped == 1] = source_patch[target_mask_cropped == 1]
 
-
-    # Mettre à jour image + masque + confiance
-    image_bgr = filled_image.copy()
-    mask_target[y0:y1, x0:x1][target_mask == 1] = 0
-    C[y0:y1, x0:x1][target_mask == 1] = C_values[best_idx]
+    # --- Mettre à jour l’image, le masque et la confiance ---
+    image_bgr = filled_image
+    mask_target[y0:y1, x0:x1][target_mask_cropped == 1] = 0
+    C[y0:y1, x0:x1][target_mask_cropped == 1] = C_values[best_idx]
 
     print("Zone restante à remplir :", np.count_nonzero(mask_target))
 
-    if iteration % 25 == 0 or np.all(mask_target == 0):
+    # --- Visualisation toutes les 3 itérations ---
+    if iteration % 3 == 0 or np.all(mask_target == 0):
         plt.imshow(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB))
         plt.title(f"Résultat après {iteration} itérations")
         plt.axis("off")
