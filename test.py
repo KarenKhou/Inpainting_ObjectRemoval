@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-image = cv2.imread("photo.png")                             
+image = cv2.imread("jaunebleu.png")                             
 mask  = cv2.imread("mask.png", cv2.IMREAD_GRAYSCALE)  #blanc  =  aenlever , noir  a garder
 
 _, mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)

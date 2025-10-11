@@ -15,7 +15,7 @@ image_bgr = image_rgba[:, :, :3].copy()
 image_bgr[mask_target == 1] = [0, 0, 0]  # efface visuellement
 
 
-patch_radius = 6
+patch_radius = 15
 h, w = mask_target.shape
 C = 1 - mask_target.astype(np.float32)  # carte de confiance initiale
 
@@ -77,7 +77,7 @@ while np.any(mask_target == 1) and iteration < max_iter:
         continue
 
     # chercher le patch source le plus similaire
-    min_ssd = 1e12
+    min_ssd = 1000000000000
     best_qx, best_qy = 0, 0
     for qy in range(patch_radius, h - patch_radius):
         for qx in range(patch_radius, w - patch_radius):
@@ -125,7 +125,7 @@ while np.any(mask_target == 1) and iteration < max_iter:
 
     print("Zone restante à remplir :", np.count_nonzero(mask_target))
 
-    if iteration % 70 == 0 or np.all(mask_target == 0):
+    if iteration % 25 == 0 or np.all(mask_target == 0):
         plt.imshow(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB))
         plt.title(f"Résultat après {iteration} itérations")
         plt.axis("off")

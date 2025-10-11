@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
 
-image = cv2.imread("photo.png")
+image = cv2.imread("jaunebleu.png")
 clone = image.copy()
 mask = np.zeros(image.shape[:2], dtype=np.uint8)
 drawing = False
 prev_point = None
+brush_size = 20
 
 def draw_line(event, x, y, flags, param):
     global drawing, prev_point
@@ -13,13 +14,13 @@ def draw_line(event, x, y, flags, param):
         drawing = True
         prev_point = (x, y)
     elif event == cv2.EVENT_MOUSEMOVE and drawing:
-        cv2.line(clone, prev_point, (x, y), (0, 0, 255), 5)
-        cv2.line(mask, prev_point, (x, y), 255, 5)
+        cv2.line(clone, prev_point, (x, y), (0, 0, 255), brush_size)
+        cv2.line(mask, prev_point, (x, y), 255, brush_size)
         prev_point = (x, y)
     elif event == cv2.EVENT_LBUTTONUP:
         drawing = False
-        cv2.line(clone, prev_point, (x, y), (0, 0, 255), 5)
-        cv2.line(mask, prev_point, (x, y), 255, 5)
+        cv2.line(clone, prev_point, (x, y), (0, 0, 255), brush_size)
+        cv2.line(mask, prev_point, (x, y), 255, brush_size)
         prev_point = None
 
 cv2.namedWindow("Dessine le contour (s = sauver, r = reset, esc = quitter)")
