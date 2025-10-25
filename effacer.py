@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # --- 1. Charger l'image originale et le masque du contour ---
-image = cv2.imread("jaunebleu.png")
+image = cv2.imread("photo2.png")
 mask = cv2.imread("mask.png", cv2.IMREAD_GRAYSCALE)
 
 # --- 2. Remplir l'intérieur du contour blanc ---

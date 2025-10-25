@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-image = cv2.imread("jaunebleu.png")
+image = cv2.imread("photo2.png")
 clone = image.copy()
 mask = np.zeros(image.shape[:2], dtype=np.uint8)
 drawing = False
